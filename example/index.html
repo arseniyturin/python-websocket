@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Chat with Python WebSockets</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: arial;
+      font-size: 13px;
+      color: #333;
+    }
+    #chat {
+      min-width: 300px;
+      max-width: 500px;
+      height: 500px;
+      margin: 30px auto;
+      border-radius: 7px;
+      background-color: #f9f9f9;
+      box-shadow: 0px 4px 10px #d2d2d2;
+      overflow: hidden;
+    }
+    #header {
+      width: 100%;
+      height: 50px;
+      background-color: #257dea;
+      display: flex;
+      align-content: center;
+      flex-wrap: nowrap;
+      align-items: center;
+    }
+    #header_text {
+      color: #fff;
+      font-size: 16px;
+      margin-left: 20px;
+    }
+    #message_box {
+      width: 100%;
+      height: 400px;
+      overflow: scroll;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    #message_box::-webkit-scrollbar {
+      display: none;
+    }
+    #input_area {
+      width: 100%;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      border-top: 1px #dcdcdc solid;
+    }
+    #input_message_wrap {
+      width: 400px;
+      overflow: hidden;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+    #input_message {
+      height: 22px;
+      width: 95%;
+      margin: 0 9px;
+      border: 1px #dcdcdc solid;
+      padding: 3px 6px;
+      border-radius: 6px;
+      color: #484848;
+    }
+    #send_wrap {
+      width: 100px;
+      overflow: hidden;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+    #send {
+      width: 91%;
+      height: 30px;
+      border: none;
+      background-color: #237de9;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #send:hover {
+      background-color: #348bf4;
+    }
+    #send:active {
+      background-color: #0f65cc;
+    }
+    .message_wrap {
+      padding: 4px;
+      margin: 1px;
+    }
+    .message_wrap__username {
+      color: green;
+      font-weight: bold;
+      display: inline-block;
+      margin: 0 3px;
+    }
+    .message_wrap__message {
+      display: inline-block;
+      margin: 0 3px;
+      max-width: 45%;
+      padding: 11px 13px;
+      background-color: #bde1ff;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <div id="header">
+      <div id="header_text">Chat with Python</div>
+    </div>
+    <div id="message_box"></div>
+    <div id="input_area">
+      <div id="input_message_wrap"><input type="text" id="input_message" /></div>
+      <div id="send_wrap"><button id="send">Send</button></div>
+    </div>
+  </div>
+</body>
+
+<script>
+
+  class Chat extends WebSocket {
+
+    constructor(address) {
+      super(address);
+      this.binaryType = 'arraybuffer';
+      this.addEventListener('open', this.open);
+      this.addEventListener('close', this.close);
+      this.addEventListener('message', this.message);
+      this.button = document.getElementById('send');
+      this.input_message = document.getElementById('input_message');
+      this.message_box = document.getElementById('message_box');
+      this.send_message = this.send_message.bind(this);
+      this.send_message_enter = this.send_message_enter.bind(this);
+      this.previous_messages = this.previous_messages.bind(this);
+      this.button.addEventListener('click', this.send_message);
+      this.input_message.addEventListener('keypress', this.send_message_enter);
+      this.input_message.addEventListener('keydown', this.previous_messages);
+      this.message_history = [];
+      this.log = 0;
+    }
+
+    add_history(message) {
+      this.message_history.push(message);
+      this.log = this.message_history.length - 1;
+    }
+
+    previous_messages(event) {
+      if (event.keyCode === 38 || event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (this.message_history.length > 0) {
+          this.input_message.value = this.message_history[this.log];
+          if (this.log > 0) { this.log -= 1 }
+          else { this.log = this.message_history.length - 1 }
+        }
+      }
+    }
+
+    send_message_enter(event) {
+      if (event.keyCode === 13 || event.key === 'Enter')
+      {
+        this.add_history(input_message.value);
+        this.send(input_message.value);
+        input_message.value = '';
+      }
+    }
+
+    send_message(event) {
+      this.send(input_message.value);
+      input_message.value = '';
+    }
+
+    open() {
+      console.log('Successfuly connected to ' + this.url);
+    }
+
+    close() {
+      console.log('Connection is closed');
+      this.button.style.backgroundColor = '#b4b4b4';
+    }
+
+    message(message) {
+      if (message.data instanceof ArrayBuffer) {
+        console.log(new Uint16Array(message.data));
+      }
+      else {
+        const message_wrap = document.createElement('div');
+        const message_wrap__username = document.createElement('div');
+        const message_wrap__message = document.createElement('div');
+        message_wrap.classList.add("message_wrap");
+        message_wrap__message.classList.add("message_wrap__message");
+        message_wrap__message.innerText = message.data;
+        message_wrap.appendChild(message_wrap__message);
+        message_box.appendChild(message_wrap);
+        message_box.scrollTo({
+          top: message_box.scrollHeight,
+          left: 0,
+          behavior: 'smooth'
+        });
+      }
+    }
+
+  }
+
+  const APP = new Chat('ws://localhost:8000');
+</script>
+</html>
