@@ -111,15 +111,15 @@ class API:
         '''Placeholder for the user defined callback function'''
         pass
 
-    def _onopen(self, client, message):
+    def _onopen(self, client):
         '''Placeholder for the user defined callback function'''
         pass
 
-    def _onclose(self, client, message):
+    def _onclose(self, client):
         '''Placeholder for the user defined callback function'''
         pass
 
-    def _onerror(self, client, message):
+    def _onerror(self, client):
         '''Placeholder for the user defined callback function'''
         pass 
 
