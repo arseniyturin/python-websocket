@@ -25,7 +25,7 @@ import struct
 import socket
 import logging
 from array import array
-from typing import Any
+from typing import Any, Callable
 from hashlib import sha1
 from base64 import b64encode
 import threading
@@ -74,7 +74,7 @@ class API:
         response = header + payload_length + message.encode('utf8')
         client.send(response)
 
-    def sendall(self, message):
+    def sendall(self, message: str) -> None:
         '''Send message to all clients'''
         
         for client in self.clients:
@@ -83,43 +83,43 @@ class API:
             except Exception as e:
                 print('ERROR:', e)
 
-    def onmessage(self, callback):
+    def onmessage(self, callback: Callable[[socket.socket, str], None]) -> None:
         '''Incoming message to the server'''
         self._onmessage = callback
 
-    def onopen(self, callback):
+    def onopen(self, callback: Callable[[socket.socket], None]) -> None:
         '''Client connected'''
         self._onopen = callback
     
-    def onclose(self, callback):
+    def onclose(self, callback: Callable[[socket.socket], None]) -> None:
         '''Client left'''
         self._onclose = callback
 
-    def onerror(self, callback):
+    def onerror(self, callback: Callable[[socket.socket], None]) -> None:
         '''TODO'''
         self._onerror = callback
 
-    def close(self, client):
+    def close(self, client: socket.socket) -> None:
         '''Close connection for particular client'''
         client.close()
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         '''Shutdown server'''
         self.sock.close()
 
-    def _onmessage(self, client, message):
+    def _onmessage(self, client: socket.socket, message: str) -> None:
         '''Placeholder for the user defined callback function'''
         pass
 
-    def _onopen(self, client):
+    def _onopen(self, client: socket.socket, message: str) -> None:
         '''Placeholder for the user defined callback function'''
         pass
 
-    def _onclose(self, client):
+    def _onclose(self, client: socket.socket, message: str) -> None:
         '''Placeholder for the user defined callback function'''
         pass
 
-    def _onerror(self, client):
+    def _onerror(self, client: socket.socket, message: str) -> None:
         '''Placeholder for the user defined callback function'''
         pass 
 
@@ -213,7 +213,7 @@ class WSServer(API):
             print('Exiting..')
             sock.close()
 
-    def _handshake(self, frame, client):
+    def _handshake(self, frame: bytes, client: socket.socket) -> None:
         '''Update from HTTP to WebSocket protocol'''
         headers = frame.decode('utf8').split('\n')
         for header in headers:
@@ -228,7 +228,7 @@ class WSServer(API):
                 )
                 client.send(response.encode('utf8'))
 
-    def _generate_accept_key(self, key):
+    def _generate_accept_key(self, key: str) -> bytes:
         '''Proper way to establish WebSocket connection
 
         >>> generate_accept_key('dGhlIHNhbXBsZSBub25jZQ==')
@@ -238,7 +238,7 @@ class WSServer(API):
         sha1_hash = sha1((key + GUID).encode('utf8')).digest()
         return b64encode(sha1_hash).decode('utf8')
 
-    def _recvall(self, client, size=1024):
+    def _recvall(self, client: socket.socket, size=1024) -> bytes:
         '''Receive full message from the client'''
         
         message = bytearray()
@@ -249,7 +249,7 @@ class WSServer(API):
                 break
         return message
 
-    def _unmask_message(self, type, masking_key, payload_data):
+    def _unmask_message(self, type: int, masking_key: bytearray, payload_data: bytearray) -> (str, str):
         '''Unmask message'''
         
         if type == OPCODE_TEXT:
@@ -259,9 +259,9 @@ class WSServer(API):
             return self._unmask_binary_message(masking_key, payload_data)
 
         if type == OPCODE_CLOSE:
-            return 'close', 0
+            return 'close', ''
 
-    def _unmask_text_message(self, masking_key, payload_data):
+    def _unmask_text_message(self, masking_key: bytearray, payload_data: bytearray) -> (str, str):
         '''Payload data from the client is always masked'''
 
         message = bytearray()
@@ -269,7 +269,7 @@ class WSServer(API):
             message.append(payload_data[byte] ^ masking_key[byte % 4])
         return 'text', message.decode('utf8')
 
-    def _unmask_binary_message(self, masking_key: str, payload_data) -> (str, array):
+    def _unmask_binary_message(self, masking_key: bytearray, payload_data: bytearray) -> (str, array):
         '''Unmasking binary message'''
 
         message = bytearray()
@@ -278,7 +278,7 @@ class WSServer(API):
         arr = array('H', message)
         return 'binary', arr
 
-    def _handle_frame(self, frame):
+    def _handle_frame(self, frame: bytearray) -> (str, str):
         '''Deciding what to do with the frame'''
         # OPCODE for frame type (text, binary, ...)
         type = frame[0] & 0xf
