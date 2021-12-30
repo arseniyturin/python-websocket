@@ -14,7 +14,7 @@ Module has several API calls
 
 | Method | Description |
 | :--- | :--- |
-| `send(client, message)` | Send text message to the client |
+| `send(client,message)` | Send text message to the client |
 | `sendall(message)` | Send text message to all clients |
 | `onmessage(callback)` | New message, user-defined callback function must take two arguments: client and message |
 | `onopen(callback)` | Client connected, user-defined callback function must take one argument: client |
@@ -60,6 +60,7 @@ server.run()
 - Handle binary data
 - Exit client gracefully
 - Handle errors
+- Handle Cross-Origin Resource Sharing (CORS)
 
 #### References
 - Comprehensive, but difficult to understand (Internet Engineering Task Force (IETF)): [The WebSocket Protocol](https://datatracker.ietf.org/doc/html/rfc6455)

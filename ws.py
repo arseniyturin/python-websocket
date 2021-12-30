@@ -124,33 +124,33 @@ class API:
         pass 
 
 class WSServer(API):
+    '''WebSocket Server that uses threads to handle multiple clients
+
+    Args:
+        host: default ''
+        port: default 8000
+        cert: TLS certificate, default None
+        key: private key, default None
+
+    Returns:
+        Server object with following methods:
+            - send()
+            - sendall()
+            - onopen()
+            - onclose()
+            - onmessage()
+            - close()
+            - shutdown()
+            - run()
+            - clients
+    '''
 
     __version__ = '0.1'
     __license__ = 'MIT'
     __author__ = 'Arseny Turin'
 
     def __init__(self, host='', port=8000, cert=None, key=None):
-        '''WebSocket Sever that uses threads to serve clients
-
-        Args:
-            host: default ''
-            port: default 8000
-            cert: TLS certificate, default None
-            key: private key, default None
-
-        Returns:
-            Server object with following methods:
-                - send()
-                - sendall()
-                - onopen()
-                - onclose()
-                - onmessage()
-                - close()
-                - shutdown()
-                - run()
-                - clients
-        '''
-
+        
         self.host = host
         self.port = port
         self.cert = cert
