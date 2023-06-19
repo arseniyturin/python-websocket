@@ -44,7 +44,8 @@ PAYLOAD_LENGTH_EXT16 = 0x7e
 PAYLOAD_LENGTH_EXT64 = 0x7f
 
 class API:
-    '''This class defines API methods for the developer to use
+    '''
+    This class defines API methods for the developer to use
     
     Do not import it directly
     '''
@@ -124,7 +125,8 @@ class API:
         pass 
 
 class WSServer(API):
-    '''WebSocket Server that uses threads to handle multiple clients
+    '''
+    WebSocket Server that uses threads to handle multiple clients
 
     Args:
         host: default ''
@@ -229,7 +231,8 @@ class WSServer(API):
                 client.send(response.encode('utf8'))
 
     def _generate_accept_key(self, key: str) -> bytes:
-        '''Proper way to establish WebSocket connection
+        '''
+        Proper way to establish WebSocket connection
 
         >>> generate_accept_key('dGhlIHNhbXBsZSBub25jZQ==')
         s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
@@ -249,7 +252,7 @@ class WSServer(API):
                 break
         return message
 
-    def _unmask_message(self, type: int, masking_key: bytearray, payload_data: bytearray) -> (str, str):
+    def _unmask_message(self, type: int, masking_key: bytearray, payload_data: bytearray) -> tuple:
         '''Unmask message'''
         
         if type == OPCODE_TEXT:
@@ -261,7 +264,7 @@ class WSServer(API):
         if type == OPCODE_CLOSE:
             return 'close', ''
 
-    def _unmask_text_message(self, masking_key: bytearray, payload_data: bytearray) -> (str, str):
+    def _unmask_text_message(self, masking_key: bytearray, payload_data: bytearray) -> tuple:
         '''Payload data from the client is always masked'''
 
         message = bytearray()
@@ -269,7 +272,7 @@ class WSServer(API):
             message.append(payload_data[byte] ^ masking_key[byte % 4])
         return 'text', message.decode('utf8')
 
-    def _unmask_binary_message(self, masking_key: bytearray, payload_data: bytearray) -> (str, array):
+    def _unmask_binary_message(self, masking_key: bytearray, payload_data: bytearray) -> tuple:
         '''Unmasking binary message'''
 
         message = bytearray()
@@ -278,7 +281,7 @@ class WSServer(API):
         arr = array('H', message)
         return 'binary', arr
 
-    def _handle_frame(self, frame: bytearray) -> (str, str):
+    def _handle_frame(self, frame: bytearray) -> tuple:
         '''Deciding what to do with the frame'''
         # OPCODE for frame type (text, binary, ...)
         type = frame[0] & 0xf
