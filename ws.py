@@ -1,4 +1,4 @@
-'''
+"""
   0                   1                   2                   3
   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  +-+-+-+-+-------+-+-------------+-------------------------------+
@@ -17,7 +17,7 @@
  + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
  |                     Payload Data continued ...                |
  +---------------------------------------------------------------+
-'''
+"""
 
 import ssl
 import sys
@@ -39,93 +39,95 @@ OPCODE_BINARY = 0x2
 OPCODE_CLOSE = 0x8
 OPCODE_PING = 0x9
 OPCODE_PONG = 0xA
-PAYLOAD_LENGTH = 0x7d
-PAYLOAD_LENGTH_EXT16 = 0x7e
-PAYLOAD_LENGTH_EXT64 = 0x7f
+PAYLOAD_LENGTH = 0x7D
+PAYLOAD_LENGTH_EXT16 = 0x7E
+PAYLOAD_LENGTH_EXT64 = 0x7F
+
 
 class API:
-    '''
+    """
     This class defines API methods for the developer to use
-    
+
     Do not import it directly
-    '''
+    """
 
     def send(self, client: socket.socket, message: str) -> None:
-        '''Send message to client'''
-        
-        length = len(message.encode('utf8'))
-        header = struct.pack('!B', FIN + OPCODE_TEXT)
+        """Send message to client"""
 
-        if (length < 126):
+        length = len(message.encode("utf8"))
+        header = struct.pack("!B", FIN + OPCODE_TEXT)
+
+        if length < 126:
             # ASCII
-            payload_length = struct.pack('!B', length)
+            payload_length = struct.pack("!B", length)
 
         if (length >= 126) and (length <= 65535):
             # ! - internet byte order (big endian)
             # B - unsigned char (1 byte)
             # H - unsigned short (2 bytes)
-            payload_length = struct.pack('!BH', 126, length)
+            payload_length = struct.pack("!BH", 126, length)
 
-        if (length > 65535):
+        if length > 65535:
             # ! - internet byte order (big endian)
             # B - unsigned char (1 byte)
             # Q - unsigned long long (8 bytes)
-            payload_length = struct.pack('!BQ', 127, length)
+            payload_length = struct.pack("!BQ", 127, length)
 
-        response = header + payload_length + message.encode('utf8')
+        response = header + payload_length + message.encode("utf8")
         client.send(response)
 
     def sendall(self, message: str) -> None:
-        '''Send message to all clients'''
-        
+        """Send message to all clients"""
+
         for client in self.clients:
             try:
                 self.send(client, message)
             except Exception as e:
-                print('ERROR:', e)
+                print("ERROR:", e)
 
     def onmessage(self, callback: Callable[[socket.socket, str], None]) -> None:
-        '''Incoming message to the server'''
+        """Incoming message to the server"""
         self._onmessage = callback
 
     def onopen(self, callback: Callable[[socket.socket], None]) -> None:
-        '''Client connected'''
+        """Client connected"""
         self._onopen = callback
-    
+
     def onclose(self, callback: Callable[[socket.socket], None]) -> None:
-        '''Client left'''
+        """Client left"""
         self._onclose = callback
 
     def onerror(self, callback: Callable[[socket.socket], None]) -> None:
-        '''TODO'''
+        """TODO"""
         self._onerror = callback
 
     def close(self, client: socket.socket) -> None:
-        '''Close connection for particular client'''
+        """Close connection for particular client"""
         client.close()
 
     def shutdown(self) -> None:
-        '''Shutdown server'''
+        """Shutdown server"""
         self.sock.close()
 
     def _onmessage(self, client: socket.socket, message: str) -> None:
-        '''Placeholder for the user defined callback function'''
+        """Placeholder for the user defined callback function"""
         pass
 
     def _onopen(self, client: socket.socket, message: str) -> None:
-        '''Placeholder for the user defined callback function'''
+        """Placeholder for the user defined callback function"""
         pass
 
     def _onclose(self, client: socket.socket, message: str) -> None:
-        '''Placeholder for the user defined callback function'''
+        """Placeholder for the user defined callback function"""
         pass
 
     def _onerror(self, client: socket.socket, message: str) -> None:
-        '''Placeholder for the user defined callback function'''
-        pass 
+        """Placeholder for the user defined callback function"""
+        pass
+
 
 class WSServer(API):
-    '''
+    """
     WebSocket Server that uses threads to handle multiple clients
 
     Args:
@@ -145,14 +147,13 @@ class WSServer(API):
             - shutdown()
             - run()
             - clients
-    '''
+    """
 
-    __version__ = '0.1'
-    __license__ = 'MIT'
-    __author__ = 'Arseny Turin'
+    __version__ = "0.1"
+    __license__ = "MIT"
+    __author__ = "Arseny Turin"
 
-    def __init__(self, host='', port=8000, cert=None, key=None):
-        
+    def __init__(self, host="", port=8000, cert=None, key=None):
         self.host = host
         self.port = port
         self.cert = cert
@@ -163,18 +164,18 @@ class WSServer(API):
             pass
 
         def __str__(self):
-            return f'WSServer by Arseny Turin'
+            return f"WSServer by Arseny Turin"
 
         def __repr__(self):
-            return f'WSServer by Arseny Turin'
+            return f"WSServer by Arseny Turin"
 
     def run(self):
-        '''Run server forever'''
-        
+        """Run server forever"""
+
         if self.cert and self.key:
             context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             context.load_cert_chain(self.cert, self.key)
-        
+
         try:
             # AF_INET - IPv4 family
             # SOCK_STREAM - TPC connection
@@ -191,8 +192,8 @@ class WSServer(API):
                 # Print ip address of the host
                 hostname = socket.gethostname()
                 ip = socket.gethostbyname(hostname)
-                
-                print(f'Server started on http://{ip}:{self.port} ')
+
+                print(f"Server started on http://{ip}:{self.port} ")
 
                 while True:
                     # Accepting client (socket)
@@ -205,22 +206,21 @@ class WSServer(API):
                     # _handle_client is the function that will handle
                     # everything client related
                     threading.Thread(
-                        target=self._handle_client,
-                        args=(address, client),
-                        daemon=True).start()
+                        target=self._handle_client, args=(address, client), daemon=True
+                    ).start()
 
         except KeyboardInterrupt:
             # Stop server, close socket
-            print('', end='\r')
-            print('Exiting..')
+            print("", end="\r")
+            print("Exiting..")
             sock.close()
 
     def _handshake(self, frame: bytes, client: socket.socket) -> None:
-        '''Update from HTTP to WebSocket protocol'''
-        headers = frame.decode('utf8').split('\n')
+        """Update from HTTP to WebSocket protocol"""
+        headers = frame.decode("utf8").split("\n")
         for header in headers:
-            if header.startswith('Sec-WebSocket-Key'):
-                key = header.replace('Sec-WebSocket-Key:', '').strip()
+            if header.startswith("Sec-WebSocket-Key"):
+                key = header.replace("Sec-WebSocket-Key:", "").strip()
                 accept_key = self._generate_accept_key(key)
                 response = (
                     "HTTP/1.1 101 Switching Protocols\r\n"
@@ -228,22 +228,22 @@ class WSServer(API):
                     "Connection: Upgrade\r\n"
                     f"Sec-WebSocket-Accept: {accept_key}\r\n\r\n"
                 )
-                client.send(response.encode('utf8'))
+                client.send(response.encode("utf8"))
 
     def _generate_accept_key(self, key: str) -> bytes:
-        '''
+        """
         Proper way to establish WebSocket connection
 
         >>> generate_accept_key('dGhlIHNhbXBsZSBub25jZQ==')
         s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
-        '''
+        """
         GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-        sha1_hash = sha1((key + GUID).encode('utf8')).digest()
-        return b64encode(sha1_hash).decode('utf8')
+        sha1_hash = sha1((key + GUID).encode("utf8")).digest()
+        return b64encode(sha1_hash).decode("utf8")
 
     def _recvall(self, client: socket.socket, size=1024) -> bytes:
-        '''Receive full message from the client'''
-        
+        """Receive full message from the client"""
+
         message = bytearray()
         while True:
             chunk = client.recv(size)
@@ -252,9 +252,11 @@ class WSServer(API):
                 break
         return message
 
-    def _unmask_message(self, type: int, masking_key: bytearray, payload_data: bytearray) -> tuple:
-        '''Unmask message'''
-        
+    def _unmask_message(
+        self, type: int, masking_key: bytearray, payload_data: bytearray
+    ) -> tuple:
+        """Unmask message"""
+
         if type == OPCODE_TEXT:
             return self._unmask_text_message(masking_key, payload_data)
 
@@ -262,31 +264,35 @@ class WSServer(API):
             return self._unmask_binary_message(masking_key, payload_data)
 
         if type == OPCODE_CLOSE:
-            return 'close', ''
+            return "close", ""
 
-    def _unmask_text_message(self, masking_key: bytearray, payload_data: bytearray) -> tuple:
-        '''Payload data from the client is always masked'''
-
-        message = bytearray()
-        for byte in range(len(payload_data)):
-            message.append(payload_data[byte] ^ masking_key[byte % 4])
-        return 'text', message.decode('utf8')
-
-    def _unmask_binary_message(self, masking_key: bytearray, payload_data: bytearray) -> tuple:
-        '''Unmasking binary message'''
+    def _unmask_text_message(
+        self, masking_key: bytearray, payload_data: bytearray
+    ) -> tuple:
+        """Payload data from the client is always masked"""
 
         message = bytearray()
         for byte in range(len(payload_data)):
             message.append(payload_data[byte] ^ masking_key[byte % 4])
-        arr = array('H', message)
-        return 'binary', arr
+        return "text", message.decode("utf8")
+
+    def _unmask_binary_message(
+        self, masking_key: bytearray, payload_data: bytearray
+    ) -> tuple:
+        """Unmasking binary message"""
+
+        message = bytearray()
+        for byte in range(len(payload_data)):
+            message.append(payload_data[byte] ^ masking_key[byte % 4])
+        arr = array("H", message)
+        return "binary", arr
 
     def _handle_frame(self, frame: bytearray) -> tuple:
-        '''Deciding what to do with the frame'''
+        """Deciding what to do with the frame"""
         # OPCODE for frame type (text, binary, ...)
-        type = frame[0] & 0xf
+        type = frame[0] & 0xF
         # Payload length
-        payload = frame[1] & 0x7f
+        payload = frame[1] & 0x7F
 
         # Message size below 126 bytes
         if payload <= PAYLOAD_LENGTH:
@@ -309,21 +315,21 @@ class WSServer(API):
         return self._unmask_message(type, masking_key, payload_data)
 
     def _handle_client(self, address: str, client: socket.socket) -> None:
-        '''Handshake new client or process websocket frame'''
-       
+        """Handshake new client or process websocket frame"""
+
         while True:
             frame = self._recvall(client, 2048)
             if frame:
                 if client in self.clients:
                     type, message = self._handle_frame(frame)
 
-                    if type == 'text':
+                    if type == "text":
                         self._onmessage(client, message)
 
-                    if type == 'binary':
-                        print('Binary Data')
+                    if type == "binary":
+                        print("Binary Data")
 
-                    if type == 'close':
+                    if type == "close":
                         self.clients.remove(client)
                         self._onclose(client)
                         sys.exit()
