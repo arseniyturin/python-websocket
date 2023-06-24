@@ -1,7 +1,7 @@
 import sys
 sys.path.append('..')
 from collections import deque
-from ws import WSServer
+from wsserver import WSServer
 
 if __name__ == '__main__':
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     # Must take one parameter: client
     def onclose_(client):
         print('Client disconnected')
-    
+
     ws = WSServer('', port)
     ws.onmessage(onmessage_)
     ws.onopen(onopen_)
