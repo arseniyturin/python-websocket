@@ -21,15 +21,11 @@
 
 import ssl
 import sys
-import struct
 import socket
-import logging
 from array import array
-from typing import Any, Callable
 from hashlib import sha1
 from base64 import b64encode
 import threading
-from collections import deque
 from .api import API
 
 FIN = 0x80
@@ -79,10 +75,10 @@ class WSServer(API):
             pass
 
         def __str__(self):
-            return f"WSServer by Arseny Turin"
+            return "WSServer by Arseny Turin"
 
         def __repr__(self):
-            return f"WSServer by Arseny Turin"
+            return "WSServer by Arseny Turin"
 
     def run(self):
         """Run server forever"""

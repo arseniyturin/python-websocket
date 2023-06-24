@@ -1,14 +1,6 @@
-import ssl
-import sys
 import struct
 import socket
-import logging
-from array import array
-from typing import Any, Callable
-from hashlib import sha1
-from base64 import b64encode
-import threading
-from collections import deque
+from typing import Callable
 
 FIN = 0x80
 MASK = 0x80
@@ -21,6 +13,7 @@ OPCODE_PONG = 0xA
 PAYLOAD_LENGTH = 0x7D
 PAYLOAD_LENGTH_EXT16 = 0x7E
 PAYLOAD_LENGTH_EXT64 = 0x7F
+
 
 class API:
     """
