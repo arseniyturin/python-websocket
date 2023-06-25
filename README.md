@@ -5,12 +5,12 @@ Threaded WebSocket Server that is very compact, has no external dependencies and
 #### Example: Chat Application
 ![Chat](chat.gif)
 
-- In terminal `python chat.py [port]` (starts on port 8000 by default)
-- Open index.html on two different tabs
+- In terminal, type make example. This will install wssocket package into your environment and start a local WebSocket server
+- Open examples/index.html on two different tabs
 - Type anything in the chat
 
 #### API
-Module has several API calls
+WebSocket server has several API calls that you can use to control message delivery. At this point only text messages are supported.
 
 | Method | Description |
 | :--- | :--- |
@@ -30,15 +30,15 @@ from ws import WSServer
 # By default server will start on port 8000
 # and will accept connections from any host
 # Optionally, you can use secure TLS-connection
-server = WSServer(host='', port=8000, cert=None, key=None)
+server = WSServer(host="", port=8000, cert=None, key=None)
 
 # User defined callback function for handling incoming messages
 # It must take two arguments:
 #  - client, which is a socket that came from user
 #  - message, already decoded in user-friendly utf-8
 def incomimg_message(client, message):
-	# Send text message to all clients
-	server.sendall(message)
+    # Send text message to all clients
+    server.sendall(message)
 
 # Register callback function that will react everytime
 # server got new message

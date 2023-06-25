@@ -23,7 +23,7 @@ class API:
     """
 
     def send(self, client: socket.socket, message: str) -> None:
-        """Send message to client"""
+        """Send text message to client"""
 
         length = len(message.encode("utf8"))
         header = struct.pack("!B", FIN + OPCODE_TEXT)
@@ -48,7 +48,7 @@ class API:
         client.send(response)
 
     def sendall(self, message: str) -> None:
-        """Send message to all clients"""
+        """Send text message to all clients"""
 
         for client in self.clients:
             try:
@@ -56,7 +56,7 @@ class API:
             except Exception as e:
                 print("ERROR:", e)
 
-    def onmessage(self, callback: Callable[[socket.socket, str], None]) -> None:
+    def onmessage(self, callback: Callable[[socket.socket, str, str], None]) -> None:
         """Incoming message to the server"""
         self._onmessage = callback
 
@@ -65,7 +65,7 @@ class API:
         self._onopen = callback
 
     def onclose(self, callback: Callable[[socket.socket], None]) -> None:
-        """Client left"""
+        """Client disconnected"""
         self._onclose = callback
 
     def onerror(self, callback: Callable[[socket.socket], None]) -> None:
@@ -80,7 +80,9 @@ class API:
         """Shutdown server"""
         self.sock.close()
 
-    def _onmessage(self, client: socket.socket, message: str) -> None:
+    def _onmessage(
+        self, client: socket.socket, message: str, message_type: str = "text"
+    ) -> None:
         """Placeholder for the user defined callback function"""
         pass
 

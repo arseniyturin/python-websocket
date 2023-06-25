@@ -7,9 +7,9 @@
  |N|V|V|V|       |S|             |   (if payload len==126/127)   |
  | |1|2|3|       |K|             |                               |
  +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
- |     Extended payload length continued, if payload len == 127  |
+ |   Extended payload length continued, if payload len == 127    |
  + - - - - - - - - - - - - - - - +-------------------------------+
- |                               |Masking-key, if MASK set to 1  |
+ |                               | Masking-key, if MASK set to 1 |
  +-------------------------------+-------------------------------+
  | Masking-key (continued)       |          Payload Data         |
  +-------------------------------- - - - - - - - - - - - - - - - +
@@ -164,18 +164,27 @@ class WSServer(API):
         return message
 
     def _unmask_message(
-        self, type: int, masking_key: bytearray, payload_data: bytearray
+        self, message_type: int, masking_key: bytearray, payload_data: bytearray
     ) -> tuple:
         """Unmask message"""
 
-        if type == OPCODE_TEXT:
-            return self._unmask_text_message(masking_key, payload_data)
+        if message_type == OPCODE_TEXT:
+            return "text", self._unmask_text_message(masking_key, payload_data)
 
-        if type == OPCODE_BINARY:
-            return self._unmask_binary_message(masking_key, payload_data)
+        if message_type == OPCODE_BINARY:
+            return "binary", self._unmask_binary_message(masking_key, payload_data)
 
-        if type == OPCODE_CLOSE:
-            return "close", ""
+        if message_type == OPCODE_PING:
+            return "ping", None
+
+        if message_type == OPCODE_PONG:
+            return "pong", None
+
+        if message_type == OPCODE_CONTINUATION:
+            return "continuation", None
+
+        if message_type == OPCODE_CLOSE:
+            return "close", None
 
     def _unmask_text_message(
         self, masking_key: bytearray, payload_data: bytearray
@@ -185,7 +194,7 @@ class WSServer(API):
         message = bytearray()
         for byte in range(len(payload_data)):
             message.append(payload_data[byte] ^ masking_key[byte % 4])
-        return "text", message.decode("utf8")
+        return message.decode("utf8")
 
     def _unmask_binary_message(
         self, masking_key: bytearray, payload_data: bytearray
@@ -195,13 +204,12 @@ class WSServer(API):
         message = bytearray()
         for byte in range(len(payload_data)):
             message.append(payload_data[byte] ^ masking_key[byte % 4])
-        arr = array("H", message)
-        return "binary", arr
+        return message
 
     def _handle_frame(self, frame: bytearray) -> tuple:
         """Deciding what to do with the frame"""
         # OPCODE for frame type (text, binary, ...)
-        type = frame[0] & 0xF
+        message_type = frame[0] & 0xF
         # Payload length
         payload = frame[1] & 0x7F
 
@@ -223,7 +231,7 @@ class WSServer(API):
             masking_key = frame[10:14]
             payload_data = frame[14:]
 
-        return self._unmask_message(type, masking_key, payload_data)
+        return self._unmask_message(message_type, masking_key, payload_data)
 
     def _handle_client(self, address: str, client: socket.socket) -> None:
         """Handshake new client or process websocket frame"""
@@ -232,15 +240,24 @@ class WSServer(API):
             frame = self._recvall(client, 2048)
             if frame:
                 if client in self.clients:
-                    type, message = self._handle_frame(frame)
+                    message_type, message = self._handle_frame(frame)
 
-                    if type == "text":
-                        self._onmessage(client, message)
+                    if message_type == "text":
+                        self._onmessage(client, message, message_type)
 
-                    if type == "binary":
-                        print("Binary Data")
+                    if message_type == "binary":
+                        self._onmessage(client, message, message_type)
 
-                    if type == "close":
+                    if message_type == "ping":
+                        pass
+
+                    if message_type == "pong":
+                        pass
+
+                    if message_type == "continuation":
+                        pass
+
+                    if message_type == "close":
                         self.clients.remove(client)
                         self._onclose(client)
                         sys.exit()
