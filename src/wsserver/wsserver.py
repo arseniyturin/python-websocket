@@ -70,6 +70,14 @@ class WSServer(API):
         self.cert = cert
         self.key = key
         self.clients = set()
+        self.message_types = {
+            OPCODE_TEXT: "text",
+            OPCODE_BINARY: "binary",
+            OPCODE_CONTINUATION: "continuation",
+            OPCODE_CLOSE: "close",
+            OPCODE_PING: "ping",
+            OPCODE_PONG: "pong",
+        }
 
         def __call__(self):
             pass
@@ -127,7 +135,7 @@ class WSServer(API):
             sock.close()
 
     def _handshake(self, frame: bytes, client: socket.socket) -> None:
-        """Update from HTTP to WebSocket protocol"""
+        """Upgrade from HTTP to WebSocket protocol"""
         headers = frame.decode("utf8").split("\n")
         for header in headers:
             if header.startswith("Sec-WebSocket-Key"):
@@ -164,103 +172,81 @@ class WSServer(API):
         return message
 
     def _unmask_message(
-        self, message_type: int, masking_key: bytearray, payload_data: bytearray
+        self,
+        message_opcode: int,
+        masking_key: bytearray,
+        payload_data: bytearray,
     ) -> tuple:
         """Unmask message"""
 
-        if message_type == OPCODE_TEXT:
-            return "text", self._unmask_text_message(masking_key, payload_data)
-
-        if message_type == OPCODE_BINARY:
-            return "binary", self._unmask_binary_message(masking_key, payload_data)
-
-        if message_type == OPCODE_PING:
-            return "ping", None
-
-        if message_type == OPCODE_PONG:
-            return "pong", None
-
-        if message_type == OPCODE_CONTINUATION:
-            return "continuation", None
-
-        if message_type == OPCODE_CLOSE:
-            return "close", None
-
-    def _unmask_text_message(
-        self, masking_key: bytearray, payload_data: bytearray
-    ) -> tuple:
-        """Payload data from the client is always masked"""
-
+        # Message type: text, binary, close, etc
+        message_type = self.message_types[message_opcode]
+        # Fast appending with bytearray
         message = bytearray()
-        for byte in range(len(payload_data)):
-            message.append(payload_data[byte] ^ masking_key[byte % 4])
-        return message.decode("utf8")
+        # Unmask payload
+        if payload_data is not None:
+            for byte in range(len(payload_data)):
+                message.append(payload_data[byte] ^ masking_key[byte % 4])
 
-    def _unmask_binary_message(
-        self, masking_key: bytearray, payload_data: bytearray
-    ) -> tuple:
-        """Unmasking binary message"""
+        return message_type, message
 
-        message = bytearray()
-        for byte in range(len(payload_data)):
-            message.append(payload_data[byte] ^ masking_key[byte % 4])
-        return message
+    def _process_message(
+        self, client: socket.socket, message_type: str, message: bytearray
+    ) -> None:
+        """
+        Take action based on message type
+        """
+        # If message is text, decode and call callback function
+        if message_type == "text":
+            self._onmessage(client, message.decode("utf8"), message_type)
 
-    def _handle_frame(self, frame: bytearray) -> tuple:
+        # If message is binary, call callback function
+        if message_type == "binary":
+            self._onmessage(client, message, message_type)
+
+        # Client left, closing his thread and removing from the list
+        if message_type == "close":
+            self.clients.remove(client)
+            self._onclose(client)
+            sys.exit()
+
+    def _handle_frame(self, client: socket.socket, frame: bytearray) -> tuple:
         """Deciding what to do with the frame"""
         # OPCODE for frame type (text, binary, ...)
-        message_type = frame[0] & 0xF
+        message_opcode = frame[0] & 0xF
         # Payload length
         payload = frame[1] & 0x7F
 
         # Message size below 126 bytes
         if payload <= PAYLOAD_LENGTH:
-            payload_length = payload
             masking_key = frame[2:6]
             payload_data = frame[6:]
 
         # Message size from 126 to 65535 bytes
         if payload == PAYLOAD_LENGTH_EXT16:
-            payload_length = frame[2:4]
             masking_key = frame[4:8]
             payload_data = frame[8:]
 
         # Message size from 65535 bytes to (2^64)-1 bytes
         if payload == PAYLOAD_LENGTH_EXT64:
-            payload_length = frame[2:10]
             masking_key = frame[10:14]
             payload_data = frame[14:]
 
-        return self._unmask_message(message_type, masking_key, payload_data)
+        message_type, message = self._unmask_message(
+            message_opcode, masking_key, payload_data
+        )
+        self._process_message(client, message_type, message)
 
     def _handle_client(self, address: str, client: socket.socket) -> None:
-        """Handshake new client or process websocket frame"""
+        """Handshake new client or process WebSocket frame"""
 
         while True:
             frame = self._recvall(client, 2048)
             if frame:
+                # If client is already connected, process message
                 if client in self.clients:
-                    message_type, message = self._handle_frame(frame)
-
-                    if message_type == "text":
-                        self._onmessage(client, message, message_type)
-
-                    if message_type == "binary":
-                        self._onmessage(client, message, message_type)
-
-                    if message_type == "ping":
-                        pass
-
-                    if message_type == "pong":
-                        pass
-
-                    if message_type == "continuation":
-                        pass
-
-                    if message_type == "close":
-                        self.clients.remove(client)
-                        self._onclose(client)
-                        sys.exit()
+                    self._handle_frame(client, frame)
+                # New client, perform handshake and upgrade to WebSocket protocol
                 else:
                     self._handshake(frame, client)
                     self.clients.add(client)
