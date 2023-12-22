@@ -4,7 +4,7 @@ from wsserver import WSServer
 
 
 class TestWSServer(unittest.TestCase):
-    def setUp(self):        
+    def setUp(self):
         self.server = WSServer()
 
     def test__generate_accept_key(self):

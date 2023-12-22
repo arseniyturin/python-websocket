@@ -51,7 +51,6 @@ if __name__ == "__main__":
         print(f"Client disconnected: {client.getpeername()}")
         clients.remove(client)
 
-
     ws = WSServer("", port)
     ws.onmessage(onmessage)
     ws.onopen(onopen)

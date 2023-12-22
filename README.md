@@ -5,7 +5,7 @@ Threaded WebSocket Server that is very compact, has no external dependencies and
 #### Example: Chat Application
 ![Chat](chat.gif)
 
-- In terminal, type make example. This will install wssocket package into your environment and start a local WebSocket server
+- In terminal, type `$ make`. This will install wssocket package into your environment, run tests and start a local WebSocket server
 - Open examples/index.html on two different tabs
 - Type anything in the chat
 
@@ -48,12 +48,13 @@ server.onmessage(incoming_message)
 server.run()
 
 ````
+ 
+#### Tests
+To run tests:
+- `$ python -m unittest -v`
 
 #### Requirements
-- Python 3.7+
-
-
-
+- Python 3.8+
 
 #### TODO
 

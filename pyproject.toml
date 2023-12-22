@@ -1,10 +1,3 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/wsserver"]
-
 [project]
 name = "WSServer"
 version = "0.2.1"
@@ -15,11 +8,28 @@ description = "Simple WebSocket server for education"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
+    "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: Implementation :: CPython",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Topic :: Internet",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Education",
+    "Natural Language :: English",
 ]
 
 [project.urls]
 Homepage = "https://github.com/arseniyturin/python-websocket"
 Issues = "https://github.com/arseniyturin/python-websocket/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wsserver"]
