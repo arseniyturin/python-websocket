@@ -1,5 +1,5 @@
 [project]
-name = "WSServer"
+name = "wsserver"
 version = "0.2.1"
 authors = [
     {name="Arseny Turin", email="arseniy.ny@gmail.com"},

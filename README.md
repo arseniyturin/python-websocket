@@ -53,6 +53,12 @@ server.run()
 To run tests:
 - `$ python -m unittest -v`
 
+#### Build
+To build wheel locally to the `./dist` folder, run following:
+- `$ python -m pip install --upgrade build`
+- `$ python -m build`
+
+
 #### Requirements
 - Python 3.8+
 

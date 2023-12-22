@@ -1,6 +1,10 @@
-.PHONY: install tests example
+.PHONY: install tests example build
 
 all: install tests example
+
+build:
+	python -m pip install --upgrade build
+	python -m build
 
 install:
 	python -m pip install .
