@@ -27,6 +27,7 @@ from hashlib import sha1
 from base64 import b64encode
 import threading
 from .api import API
+from .logger import get_logger
 
 FIN = 0x80
 MASK = 0x80
@@ -39,6 +40,8 @@ OPCODE_PONG = 0xA
 PAYLOAD_LENGTH = 0x7D
 PAYLOAD_LENGTH_EXT16 = 0x7E
 PAYLOAD_LENGTH_EXT64 = 0x7F
+
+logger = get_logger("console_and_file")
 
 
 class WSServer(API):

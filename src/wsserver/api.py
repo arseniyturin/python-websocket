@@ -1,6 +1,6 @@
 import struct
 import socket
-import logging
+from .logger import get_logger
 from typing import Callable
 
 FIN = 0x80
@@ -15,8 +15,7 @@ PAYLOAD_LENGTH = 0x7D
 PAYLOAD_LENGTH_EXT16 = 0x7E
 PAYLOAD_LENGTH_EXT64 = 0x7F
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+logger = get_logger("console_and_file")
 
 
 class API:
@@ -63,7 +62,7 @@ class API:
             try:
                 self.send(client, message)
             except Exception as e:
-                logger.error("Failed to send message: {e}", exc_info=True)
+                logger.error(f"Failed to send message: {e}", exc_info=True)
 
     def onmessage(self, callback: Callable[[socket.socket, str, str], None]) -> None:
         """Incoming message to the server"""
