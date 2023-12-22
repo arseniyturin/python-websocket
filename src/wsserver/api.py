@@ -1,5 +1,6 @@
 import struct
 import socket
+import logging
 from typing import Callable
 
 FIN = 0x80
@@ -14,6 +15,9 @@ PAYLOAD_LENGTH = 0x7D
 PAYLOAD_LENGTH_EXT16 = 0x7E
 PAYLOAD_LENGTH_EXT64 = 0x7F
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__file__)
+
 
 class API:
     """
@@ -25,8 +29,13 @@ class API:
     def send(self, client: socket.socket, message: str) -> None:
         """Send text message to client"""
 
-        length = len(message.encode("utf8"))
-        header = struct.pack("!B", FIN + OPCODE_TEXT)
+        if isinstance(message, str):
+            message = message.encode("utf8")
+            length = len(message)
+            header = struct.pack("!B", FIN + OPCODE_TEXT)
+        else:
+            length = len(message)
+            header = struct.pack("!B", FIN + OPCODE_BINARY)
 
         if length < 126:
             # ASCII
@@ -44,7 +53,7 @@ class API:
             # Q - unsigned long long (8 bytes)
             payload_length = struct.pack("!BQ", 127, length)
 
-        response = header + payload_length + message.encode("utf8")
+        response = header + payload_length + message
         client.send(response)
 
     def sendall(self, message: str) -> None:
@@ -54,7 +63,7 @@ class API:
             try:
                 self.send(client, message)
             except Exception as e:
-                print("ERROR:", e)
+                logger.error("Failed to send message: {e}", exc_info=True)
 
     def onmessage(self, callback: Callable[[socket.socket, str, str], None]) -> None:
         """Incoming message to the server"""

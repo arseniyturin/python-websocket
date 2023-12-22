@@ -202,7 +202,7 @@ class WSServer(API):
 
         # If message is binary, call callback function
         if message_type == "binary":
-            self._onmessage(client, message, message_type)
+            self._onmessage(client, bytes(message), message_type)
 
         # Client left, closing his thread and removing from the list
         if message_type == "close":
