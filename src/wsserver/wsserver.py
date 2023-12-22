@@ -153,7 +153,7 @@ class WSServer(API):
         """
         Proper way to establish WebSocket connection
 
-        >>> generate_accept_key('dGhlIHNhbXBsZSBub25jZQ==')
+        >>> _generate_accept_key('dGhlIHNhbXBsZSBub25jZQ==')
         s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
         """
         GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"

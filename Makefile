@@ -1,8 +1,12 @@
-.PHONY: example test
+.PHONY: install tests example
+
+all: install tests example
+
+install:
+	python -m pip install .
+
+tests:
+	python -m unittest -v
 
 example:
-	pip install ./src
 	python ./example/chat.py
-
-test:
-	python -m unittest ./src/tests
